@@ -1,14 +1,14 @@
 <template>
 
    <div class="container mt-5">  
-   <form>  
+   <form >  
 
       <fieldset>
         <legend> Datos del Cliente</legend>
       <div class="row mb-3">
         <label for="ClienteBusqueda" class="col-sm-2 col-form-label" >Nombre Cliente</label>
        <div class="col-sm-10">
-        <input type="text" class="form-control" id="ClienteBusqueda" placeholder="Ingresar nombre cliente">
+        <input type="text" class="form-control" id="ClienteBusqueda" placeholder="Ingresar nombre cliente" v-model="inputClientName">
 
       </div> 
 
@@ -135,7 +135,14 @@
 
     </fieldset>  
     <br>  
-    <button type="button" class="btn btn-info">Guardar</button>
+    <div v-if="this.processInstanceId">
+      <pre>
+        Process Instance Id: {{  this.processInstanceId }}
+      </pre>
+    </div>
+    <p/>
+    <button type="button" class="btn btn-info" @click="this.handleSubmit()">Guardar</button>
+
 
 
 
@@ -147,14 +154,45 @@
 
 
   <script>  
-   export default {
-   name: 'FormularioRegistroCliente',
-   
-   
+      import axios from 'axios';
+      
+      export default {
+        name: 'FormularioRegistroCliente',
+        data() {
+          return { 
+            values: {},
+            inputClientName: "Argos Inc.",
+            processInstanceId: "",
+            processInstanceNotes: "",
+          }
+        },
+        methods: {
+              handleSubmit() {
+                  const processDefKey = "myprocess";
+                  // invoke the api and show the result instance id to the end user
+                  axios.post( 'http://localhost:8080/engine-rest/process-definition/key/' + processDefKey + '/start', 
+                              { 
+                                "variables": { 
+                                    "input1" : { "value": this.inputClientName } 
+                                } 
+                              }, 
+                              { headers: { 'Content-Type'  : 'application/json' } } 
+                  )
+                  .then( ( apiResponse ) => {
+                              if ( apiResponse !== null && apiResponse.status === 200  ){
+                                // we should see instance id
+                                console.log('instance id - ' + apiResponse.data );
+                                this.processInstanceId = apiResponse.data.id;
+                                this.processInstanceNotes = "Process name: " + apiResponse.data.definitionId;
+
+                              } else {
+                                console.log('api returned an error ' + apiResponse.status );
+                              }
+                  })
+                  .catch( error => { 
+                                    console.log('error while invoking api ' + error ); 
+                  });
+              }
+        }
    } 
-
-
-
-
-
- </script> 	
+  </script> 	
